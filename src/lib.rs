@@ -43,8 +43,18 @@ pub fn calculate_squares(puzzle: &[u32]) -> Option<(u32, bool, u32)> {
 }
 
 use std::collections::HashSet;
-fn check_if_unique(input: &[u32]) -> bool {
+pub fn check_if_unique(input: &[u32]) -> bool {
     let mut elements = HashSet::new();
+    let iter = input.into_iter().filter(|&x| *x != 0);
+    for i in iter {
+        if !elements.insert(i) {
+            return false;
+        }
+    }
+    true
+}
+pub fn check_if_unique_2(input: &[u32]) -> bool {
+    let mut elements = HashSet::with_capacity(input.len());
     let iter = input.into_iter().filter(|&x| *x != 0);
     for i in iter {
         if !elements.insert(i) {
