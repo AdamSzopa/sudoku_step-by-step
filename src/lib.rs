@@ -59,14 +59,14 @@ pub fn check_if_unique(input: &[u32]) -> bool {
 }
 
 fn check_if_valid_sudoku(sudoku: &[u32]) -> bool {
-    let (big_dim, check_small, _) = calculate_squares(sudoku.len() as u32).unwrap();
+    let (big_dim, check_small, small_dim) = calculate_squares(sudoku.len() as u32).unwrap();
     for i in 0..big_dim {
         if !(check_if_unique(&get_row(&sudoku, i, big_dim)) &&
              check_if_unique(&get_col(&sudoku, i, big_dim))) {
             return false;
         }
         if check_small {
-            if !check_if_unique(&get_sqr(&sudoku, i, big_dim)) {
+            if !check_if_unique(&get_sqr(&sudoku, i, big_dim, small_dim)) {
                 return false;
             }
         }
@@ -76,13 +76,25 @@ fn check_if_valid_sudoku(sudoku: &[u32]) -> bool {
 }
 
 fn get_row(sudoku: &[u32], row: u32, dim: u32) -> Vec<u32> {
-    vec![0]
+    sudoku[(row * dim) as usize..(row * dim + dim) as usize].to_vec()
 }
 fn get_col(sudoku: &[u32], col: u32, dim: u32) -> Vec<u32> {
-    vec![0]
+    (0..dim)
+        .map(|x| sudoku[(col + x * dim) as usize])
+        .collect::<Vec<u32>>()
 }
-fn get_sqr(sudoku: &[u32], sqr: u32, dim: u32) -> Vec<u32> {
-    vec![0]
+fn get_sqr(sudoku: &[u32], square: u32, dim: u32, small_dim: u32) -> Vec<u32> {
+    let mut output: Vec<u32> = Vec::with_capacity(dim as usize);
+    let square_row = square / small_dim;
+    let square_col = square % small_dim;
+
+    for a in 0..small_dim {
+        for b in 0..small_dim {
+            output.push(sudoku[((square_row * small_dim * dim) + (small_dim * square_col) + b +
+                         (a * dim)) as usize]);
+        }
+    }
+    output
 }
 
 #[cfg(test)]
@@ -137,14 +149,15 @@ mod tests {
     #[test]
     fn get_col_test() {
         assert_eq!(get_col(&test_sudoku(), 0, 4), vec![1, 5, 9, 13]);
-        assert_eq!(get_col(&test_sudoku(), 2, 4), vec![3, 7, 12, 15]);
+        assert_eq!(get_col(&test_sudoku(), 2, 4), vec![3, 7, 11, 15]);
         assert_eq!(get_col(&test_sudoku(), 3, 4), vec![4, 8, 12, 16]);
     }
     #[test]
     fn get_sqr_test() {
-        assert_eq!(get_sqr(&test_sudoku(), 0, 4), vec![1, 2, 5, 6]);
-        assert_eq!(get_sqr(&test_sudoku(), 2, 4), vec![9, 10, 13, 14]);
-        assert_eq!(get_sqr(&test_sudoku(), 3, 4), vec![11, 12, 15, 16]);
+        assert_eq!(get_sqr(&test_sudoku(), 0, 4, 2), vec![1, 2, 5, 6]);
+        assert_eq!(get_sqr(&test_sudoku(), 1, 4, 2), vec![3, 4, 7, 8]);
+        assert_eq!(get_sqr(&test_sudoku(), 2, 4, 2), vec![9, 10, 13, 14]);
+        assert_eq!(get_sqr(&test_sudoku(), 3, 4, 2), vec![11, 12, 15, 16]);
     }
 
     #[test]
