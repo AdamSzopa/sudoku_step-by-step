@@ -2,7 +2,7 @@
 
 pub fn print_sudoku(puzzle: &[u32]) {
 
-    let (big_dim, check_small, small_dim) = calculate_squares(&puzzle).unwrap();
+    let (big_dim, check_small, small_dim) = calculate_squares(puzzle.len() as u32).unwrap();
 
     for (i, v) in puzzle.iter().enumerate() {
         print!("{} ", v);
@@ -28,11 +28,11 @@ pub fn print_sudoku(puzzle: &[u32]) {
 /// use sudoku::calculate_squares;
 ///
 /// let sudoku = vec![1,2,3,4];
-/// let (big_dim, check_small, small_dim) = calculate_squares(&sudoku).unwrap();
+/// let (big_dim, check_small, small_dim) = calculate_squares(sudoku.len() as u32).unwrap();
 /// ```
-pub fn calculate_squares(puzzle: &[u32]) -> Option<(u32, bool, u32)> {
-    let big_dim = f64::sqrt(puzzle.len() as f64) as u32;
-    if big_dim * big_dim != puzzle.len() as u32 {
+pub fn calculate_squares(puzzle: u32) -> Option<(u32, bool, u32)> {
+    let big_dim = f64::sqrt(puzzle as f64) as u32;
+    if big_dim * big_dim != puzzle as u32 {
         return None;
     }
     let small_dim = f64::sqrt(big_dim as f64) as u32;
@@ -88,5 +88,12 @@ mod tests {
         print_sudoku(&vec![1, 2, 3, 4, 5, 6, 7, 8, 9]);
         println!("");
         print_sudoku(&vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]);
+    }
+
+    #[test]
+    fn calculate_squares_test_pos() {
+        assert_eq!(calculate_squares(9).unwrap(), (3, false, 1));
+        assert_eq!(calculate_squares(81).unwrap(), (9, true, 3));
+        assert_eq!(calculate_squares(8), None)
     }
 }
