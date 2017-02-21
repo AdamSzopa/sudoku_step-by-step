@@ -58,6 +58,33 @@ pub fn check_if_unique(input: &[u32]) -> bool {
     true
 }
 
+fn check_if_valid_sudoku(sudoku: &[u32]) -> bool {
+    let (big_dim, check_small, _) = calculate_squares(sudoku.len() as u32).unwrap();
+    for i in 0..big_dim {
+        if !(check_if_unique(&get_row(&sudoku, i, big_dim)) &&
+             check_if_unique(&get_col(&sudoku, i, big_dim))) {
+            return false;
+        }
+        if check_small {
+            if !check_if_unique(&get_sqr(&sudoku, i, big_dim)) {
+                return false;
+            }
+        }
+    }
+    true
+
+}
+
+fn get_row(sudoku: &[u32], row: u32, dim: u32) -> Vec<u32> {
+    vec![0]
+}
+fn get_col(sudoku: &[u32], col: u32, dim: u32) -> Vec<u32> {
+    vec![0]
+}
+fn get_sqr(sudoku: &[u32], sqr: u32, dim: u32) -> Vec<u32> {
+    vec![0]
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -95,5 +122,45 @@ mod tests {
         assert_eq!(calculate_squares(9).unwrap(), (3, false, 1));
         assert_eq!(calculate_squares(81).unwrap(), (9, true, 3));
         assert_eq!(calculate_squares(8), None)
+    }
+
+    fn test_sudoku() -> Vec<u32> {
+        vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+    }
+
+    #[test]
+    fn get_row_test() {
+        assert_eq!(get_row(&test_sudoku(), 0, 4), vec![1, 2, 3, 4]);
+        assert_eq!(get_row(&test_sudoku(), 2, 4), vec![9, 10, 11, 12]);
+        assert_eq!(get_row(&test_sudoku(), 3, 4), vec![13, 14, 15, 16]);
+    }
+    #[test]
+    fn get_col_test() {
+        assert_eq!(get_col(&test_sudoku(), 0, 4), vec![1, 5, 9, 13]);
+        assert_eq!(get_col(&test_sudoku(), 2, 4), vec![3, 7, 12, 15]);
+        assert_eq!(get_col(&test_sudoku(), 3, 4), vec![4, 8, 12, 16]);
+    }
+    #[test]
+    fn get_sqr_test() {
+        assert_eq!(get_sqr(&test_sudoku(), 0, 4), vec![1, 2, 5, 6]);
+        assert_eq!(get_sqr(&test_sudoku(), 2, 4), vec![9, 10, 13, 14]);
+        assert_eq!(get_sqr(&test_sudoku(), 3, 4), vec![11, 12, 15, 16]);
+    }
+
+    #[test]
+    fn valid_test_pos() {
+        assert!(check_if_valid_sudoku(&test_sudoku()));
+    }
+    #[test]
+    #[should_panic(expected = "assertion failed")]
+    fn valid_test_neg() {
+        let sudoku = vec![1, 2, 3, 3];
+        assert!(check_if_valid_sudoku(&sudoku));
+        let sudoku = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 14, 15, 16]; //two 1 in col
+        assert!(check_if_valid_sudoku(&sudoku));
+        let sudoku = vec![1, 2, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]; //two 2 in small square
+        assert!(check_if_valid_sudoku(&sudoku));
+        let sudoku = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 16, 15, 16]; //two 16 in row
+        assert!(check_if_valid_sudoku(&sudoku));
     }
 }
