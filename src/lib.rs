@@ -42,7 +42,15 @@ pub fn calculate_squares(puzzle: &[u32]) -> Option<(u32, bool, u32)> {
     Some((big_dim, check_inner_square, small_dim))
 }
 
+use std::collections::HashSet;
 fn check_if_unique(input: &[u32]) -> bool {
+    let mut elements = HashSet::new();
+    let iter = input.into_iter().filter(|&x| *x != 0);
+    for i in iter {
+        if !elements.insert(i) {
+            return false;
+        }
+    }
     true
 }
 
