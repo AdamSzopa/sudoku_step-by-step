@@ -48,3 +48,18 @@ pub fn calculate_squares(puzzle: &[u32]) -> Option<(u32, bool, u32)> {
     };
     Some((big_dim, check_inner_square, small_dim))
 }
+
+fn check_if_unique(input: &[u32]) -> bool{
+    true
+}
+
+#[test]
+fn test_unique(){
+    let mut vec = vec![0,0,0,0];
+    assert!(check_if_unique(&vec));
+    vec = vec![1,2,0,3];
+    assert!(check_if_unique(&vec));
+    vec = vec![1];
+    assert!(check_if_unique(&vec));
+}
+
