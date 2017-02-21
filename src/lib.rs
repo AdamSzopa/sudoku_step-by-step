@@ -16,6 +16,13 @@ pub fn print_sudoku(puzzle: &[u32]) {
     }
 }
 
+#[test]
+fn test_print(){
+    print_sudoku(&vec![1,2,3,4,5,6,7,8,9]);
+    println!("");
+    print_sudoku(&vec![1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]);
+}
+
 fn calculate_squares(puzzle: &[u32]) -> Option<(u32, bool, u32)> {
     let big_dim = f64::sqrt(puzzle.len() as f64) as u32;
     if big_dim * big_dim != puzzle.len() as u32 {
