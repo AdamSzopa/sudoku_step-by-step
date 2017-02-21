@@ -54,7 +54,7 @@ fn check_if_unique(input: &[u32]) -> bool{
 }
 
 #[test]
-fn test_unique(){
+fn test_unique_pos(){
     let mut vec = vec![0,0,0,0];
     assert!(check_if_unique(&vec));
     vec = vec![1,2,0,3];
@@ -63,3 +63,13 @@ fn test_unique(){
     assert!(check_if_unique(&vec));
 }
 
+#[test]
+#[should_panic(expected = "assertion failed")]
+fn test_unique_neg(){
+    let mut vec = vec![1,1];
+    assert!(check_if_unique(&vec));
+    vec = vec![1,2,0,1];
+    assert!(check_if_unique(&vec));
+    vec = vec![1,4,8,0,0,4,8];
+    assert!(check_if_unique(&vec));
+}
