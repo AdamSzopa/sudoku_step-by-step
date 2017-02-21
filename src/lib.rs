@@ -1,6 +1,19 @@
 pub fn print_sudoku(puzzle: &[u32]) {
-    //how do I know how big is the square?
-    //does it have inner squares?
+
+    let (big_dim, check_small, small_dim) = calculate_squares(&puzzle).unwrap();
+
+    for (i, v) in puzzle.iter().enumerate() {
+        print!("{} ", v);
+        if check_small && (i + 1) % small_dim as usize == 0 {
+            print!(" ");
+        }
+        if (i + 1) % big_dim as usize == 0 {
+            println!("");
+        }
+        if check_small && (i + 1) % (small_dim * big_dim) as usize == 0 {
+            println!("");
+        }
+    }
 }
 
 fn calculate_squares(puzzle: &[u32]) -> Option<(u32, bool, u32)> {
@@ -12,5 +25,5 @@ fn calculate_squares(puzzle: &[u32]) -> Option<(u32, bool, u32)> {
     let check_inner_square = {
         small_dim * small_dim == big_dim
     };
-    Some((big_dim, check_inner_square,small_dim))
+    Some((big_dim, check_inner_square, small_dim))
 }
