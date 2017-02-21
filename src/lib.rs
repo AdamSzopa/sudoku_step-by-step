@@ -54,12 +54,17 @@ pub fn check_if_unique(input: &[u32]) -> bool {
     true
 }
 pub fn check_if_unique_2(input: &[u32]) -> bool {
-    let mut elements = HashSet::with_capacity(input.len());
+    let mut elements = vec![0;input.len()];
     let iter = input.into_iter().filter(|&x| *x != 0);
     for i in iter {
-        if !elements.insert(i) {
+        if *i as usize >= elements.len() {
+            let mut add = vec![0;*i as usize-elements.len()+1];
+            elements.append(&mut add);
+        }
+        if elements[*i as usize] != 0 {
             return false;
         }
+        elements[*i as usize] = *i;
     }
     true
 }
