@@ -97,6 +97,10 @@ fn get_sqr(sudoku: &[u32], square: u32, dim: u32, small_dim: u32) -> Vec<u32> {
     output
 }
 
+pub fn solve(sudoku: &[u32]) -> Result<Vec<u32>, String> {
+    Err("Not impelented".to_owned())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -175,5 +179,48 @@ mod tests {
         assert!(check_if_valid_sudoku(&sudoku));
         let sudoku = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 16, 15, 16]; //two 16 in row
         assert!(check_if_valid_sudoku(&sudoku));
+    }
+
+    #[test]
+    fn solve_empty_test() {
+        let empty_vec = vec![0, 81];
+        let solved = solve(&empty_vec).unwrap();
+        assert!(check_if_valid_sudoku(&solved));
+    }
+    #[test]
+    fn solve_normal_test() {
+        let vec = vec![0, 0, 0, 0, 0, 1, 2, 0, 0, 3, 4, 0, 0, 0, 0, 0];
+        let solved = solve(&vec).unwrap();
+        assert!(check_if_valid_sudoku(&solved));
+    }
+    #[test]
+    fn solve_noinner_test() {
+        let vec = vec![0, 0, 0, 0, 1, 2, 0, 3, 0];
+        let solved = solve(&vec).unwrap();
+        assert!(check_if_valid_sudoku(&solved));
+    }
+    #[test]
+    #[ignore]
+    fn solve_hard_test() {
+        let vec = vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 8, 5, 0, 0, 1, 0, 2, 0, 0,
+                       0, 0, 0, 0, 0, 5, 0, 7, 0, 0, 0, 0, 0, 4, 0, 0, 0, 1, 0, 0, 0, 9, 0, 0, 0,
+                       0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 7, 3, 0, 0, 2, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+                       0, 4, 0, 0, 0, 9];
+        let solved = solve(&vec).unwrap();
+        assert!(check_if_valid_sudoku(&solved));
+    }
+
+    #[test]
+    #[should_panic(expected = "Not a square!")]
+    fn solve_notsquare_test() {
+        let vec = vec![0, 80];
+        let solved = solve(&vec).unwrap();
+    }
+
+    #[test]
+    #[should_panic(expected = "No solution!")]
+    fn solve_nosolution_test() {
+        let vec = vec![0, 0, 0, 0, 0, 1, 1, 0, 0, 3, 4, 0, 0, 0, 0, 0];
+        let solved = solve(&vec).unwrap();
     }
 }
