@@ -1,6 +1,4 @@
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-    }
+pub fn print_sudoku(puzzle: &[u32]) {
+ //how do I know how big is the square?
+ //does it have inner squares?   
 }
