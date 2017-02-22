@@ -134,7 +134,9 @@ pub fn solve(sudoku_in: &[u32]) -> Result<Vec<u32>, String> {
                 let row = get_row(&sudoku, row_no, big_dim);
                 let col = get_col(&sudoku, col_no, big_dim);
 
-                if !(check_if_unique(&row) && check_if_unique(&col)) {
+                let candidate = sudoku[index as usize];
+
+                if !(check_if_possible(&row, candidate) && check_if_possible(&col, candidate)) {
                     continue;
                 }
 
@@ -145,7 +147,7 @@ pub fn solve(sudoku_in: &[u32]) -> Result<Vec<u32>, String> {
                     let c = (a % big_dim) / small_dim;
                     let sqr = b * small_dim + c;
 
-                    if !check_if_unique(&get_sqr(&sudoku, sqr, big_dim, small_dim)) {
+                    if !check_if_possible(&get_sqr(&sudoku, sqr, big_dim, small_dim), candidate) {
                         continue;
                     }
                 }
