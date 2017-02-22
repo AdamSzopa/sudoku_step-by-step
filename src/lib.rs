@@ -164,6 +164,20 @@ pub fn solve(sudoku_in: &[u32]) -> Result<Vec<u32>, String> {
     Ok(sudoku.to_vec())
 }
 
+pub fn check_if_possible(vec_in: &[u32], candidate: u32) -> bool {
+    let mut found = false;
+    for i in vec_in {
+        if *i == candidate {
+            if !found {
+                found = true
+            } else {
+                return false;
+            }
+        }
+    }
+    true
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -187,6 +201,25 @@ mod tests {
         assert!(check_if_unique(&vec));
         vec = vec![1, 4, 8, 0, 0, 4, 8];
         assert!(check_if_unique(&vec));
+    }
+    #[test]
+    fn test_possible_pos() {
+        let mut vec = vec![0, 0, 1, 0];
+        assert!(check_if_possible(&vec, 1));
+        vec = vec![1, 2, 0, 3];
+        assert!(check_if_possible(&vec, 2));
+        vec = vec![0];
+        assert!(check_if_possible(&vec, 0));
+    }
+
+    #[test]
+    fn test_possible_neg() {
+        let mut vec = vec![1, 1];
+        assert!(!check_if_possible(&vec, 1));
+        vec = vec![1, 2, 0, 1];
+        assert!(!check_if_possible(&vec, 1));
+        vec = vec![1, 4, 8, 0, 0, 4, 8];
+        assert!(!check_if_possible(&vec, 4));
     }
 
     #[test]
