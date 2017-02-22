@@ -1,10 +1,10 @@
 #![crate_name = "sudoku"]
 
-pub fn print_sudoku(puzzle: &[u32]) {
+pub fn print_sudoku(sudoku: &[u32]) {
 
-    let (big_dim, check_small, small_dim) = calculate_squares(puzzle.len() as u32).unwrap();
+    let (big_dim, check_small, small_dim) = calculate_squares(sudoku.len() as u32).unwrap();
 
-    for (i, v) in puzzle.iter().enumerate() {
+    for (i, v) in sudoku.iter().enumerate() {
         print!("{} ", v);
         if check_small && (i + 1) % small_dim as usize == 0 {
             print!(" ");
@@ -18,7 +18,7 @@ pub fn print_sudoku(puzzle: &[u32]) {
     }
 }
 
-/// Returns a Some with the lenght of a given sudoku puzzle, a bool
+/// Returns a Some with the lenght of a given sudoku sudoku, a bool
 /// which indicates if there are inner squares and the size of the small one.
 /// Note: The value of the smaller one might be nonsense if the bool is false.
 ///
@@ -30,9 +30,9 @@ pub fn print_sudoku(puzzle: &[u32]) {
 /// let sudoku = vec![1,2,3,4];
 /// let (big_dim, check_small, small_dim) = calculate_squares(sudoku.len() as u32).unwrap();
 /// ```
-pub fn calculate_squares(puzzle: u32) -> Option<(u32, bool, u32)> {
-    let big_dim = f64::sqrt(puzzle as f64) as u32;
-    if big_dim * big_dim != puzzle as u32 {
+pub fn calculate_squares(sudoku: u32) -> Option<(u32, bool, u32)> {
+    let big_dim = f64::sqrt(sudoku as f64) as u32;
+    if big_dim * big_dim != sudoku as u32 {
         return None;
     }
     let small_dim = f64::sqrt(big_dim as f64) as u32;
@@ -87,7 +87,6 @@ fn get_sqr(sudoku: &[u32], square: u32, dim: u32, small_dim: u32) -> Vec<u32> {
     let mut output: Vec<u32> = Vec::with_capacity(dim as usize);
     let square_row = square / small_dim;
     let square_col = square % small_dim;
-
     for a in 0..small_dim {
         for b in 0..small_dim {
             output.push(sudoku[((square_row * small_dim * dim) + (small_dim * square_col) + b +
@@ -97,8 +96,72 @@ fn get_sqr(sudoku: &[u32], square: u32, dim: u32, small_dim: u32) -> Vec<u32> {
     output
 }
 
-pub fn solve(sudoku: &[u32]) -> Result<Vec<u32>, String> {
-    Err("Not impelented".to_owned())
+pub fn solve(sudoku_in: &[u32]) -> Result<Vec<u32>, String> {
+    let square_info;
+    match calculate_squares(sudoku_in.len() as u32) {
+        Some(i) => square_info = i,
+        None => return Err("Not a square!".to_owned()),
+    }
+    let (big_dim, check_small, small_dim) = square_info;
+
+    let mut sudoku = sudoku_in.to_vec();
+
+    let mut fixed_map: Vec<bool> = Vec::with_capacity(sudoku.len());
+    for element in sudoku.iter() {
+        if *element == 0 {
+            fixed_map.push(false);
+        } else {
+            fixed_map.push(true);
+        };
+    }
+
+    let mut index: u32 = 0;
+    let mut forward = true;
+    while index < sudoku.len() as u32 {
+        if !fixed_map[index as usize] {
+            sudoku[index as usize] += 1;
+            if sudoku[index as usize] > big_dim {
+                if index == 0 {
+                    return Err("No solution!".to_owned());
+                }
+                sudoku[index as usize] = 0;
+                forward = false;
+            } else {
+
+                let row_no = index / big_dim;
+                let col_no = index % big_dim;
+
+                let row = get_row(&sudoku, row_no, big_dim);
+                let col = get_col(&sudoku, col_no, big_dim);
+
+                if !(check_if_unique(&row) && check_if_unique(&col)) {
+                    continue;
+                }
+
+                if check_small {
+                    let temp = index - index % small_dim;
+                    let a = temp - big_dim * ((temp / big_dim) % small_dim);
+                    let b = (a / big_dim) / small_dim;
+                    let c = (a % big_dim) / small_dim;
+                    let sqr = b * small_dim + c;
+
+                    if !check_if_unique(&get_sqr(&sudoku, sqr, big_dim, small_dim)) {
+                        continue;
+                    }
+                }
+                forward = true;
+            }
+        }
+        if forward {
+            index += 1;
+        } else if index > 0 {
+            index -= 1;
+        } else {
+            return Err("No solution.".to_owned());
+        }
+    }
+
+    Ok(sudoku.to_vec())
 }
 
 #[cfg(test)]
@@ -183,7 +246,7 @@ mod tests {
 
     #[test]
     fn solve_empty_test() {
-        let empty_vec = vec![0, 81];
+        let empty_vec = vec![0; 81];
         let solved = solve(&empty_vec).unwrap();
         assert!(check_if_valid_sudoku(&solved));
     }
