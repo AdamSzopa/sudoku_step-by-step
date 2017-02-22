@@ -1,5 +1,7 @@
 #![crate_name = "sudoku"]
 
+extern crate crossbeam;
+
 pub fn print_sudoku(sudoku: &[u32]) {
 
     let (big_dim, check_small, small_dim) = calculate_squares(sudoku.len() as u32).unwrap();
@@ -166,6 +168,234 @@ pub fn solve(sudoku_in: &[u32]) -> Result<Vec<u32>, String> {
     Ok(sudoku.to_vec())
 }
 
+use std::thread;
+use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
+
+pub fn solve_threads(sudoku_in: &[u32]) -> Result<Vec<u32>, String> {
+    let square_info;
+    match calculate_squares(sudoku_in.len() as u32) {
+        Some(i) => square_info = i,
+        None => return Err("Not a square!".to_owned()),
+    }
+    let (big_dim, check_small, small_dim) = square_info;
+
+    let sudoku = sudoku_in.to_vec();
+
+    let mut fixed_map: Vec<bool> = Vec::with_capacity(sudoku.len());
+    for element in sudoku.iter() {
+        if *element == 0 {
+            fixed_map.push(false);
+        } else {
+            fixed_map.push(true);
+        };
+    }
+
+    let mut reversed_sudoku = sudoku.clone();
+    reversed_sudoku.reverse();
+    let mut fixed_map_reverse = fixed_map.clone();
+    fixed_map_reverse.reverse();
+
+    let anwser = false;
+    let anwser_reverse = false;
+
+    let mut jobs = Vec::new();
+    jobs.push(Arc::new(Mutex::new((sudoku, fixed_map, anwser))));
+    jobs.push(Arc::new(Mutex::new((reversed_sudoku, fixed_map_reverse, anwser_reverse))));
+
+    let cont = Arc::new(AtomicBool::new(true));
+
+    let mut threads = Vec::new();
+    for i in &jobs {
+        let data = i.clone();
+        let cont = cont.clone();
+        threads.push(thread::spawn(move || {
+
+            let (ref mut sudoku, ref mut fixed_map, ref mut anwser) = *data.lock().unwrap();
+
+            let mut index: u32 = 0;
+            let mut forward = true;
+            while index < sudoku.len() as u32 {
+
+                if !cont.load(Ordering::SeqCst) {
+                    return;
+                }
+
+                if !fixed_map[index as usize] {
+                    sudoku[index as usize] += 1;
+                    if sudoku[index as usize] > big_dim {
+                        if index == 0 {
+                            return;
+                        }
+                        sudoku[index as usize] = 0;
+                        forward = false;
+                    } else {
+
+                        let row_no = index / big_dim;
+                        let col_no = index % big_dim;
+
+                        let row = get_row(&sudoku, row_no, big_dim);
+                        let col = get_col(&sudoku, col_no, big_dim);
+
+                        let candidate = sudoku[index as usize];
+
+                        if !(check_if_possible(&row, candidate) &&
+                             check_if_possible(&col, candidate)) {
+                            continue;
+                        }
+
+                        if check_small {
+                            let temp = index - index % small_dim;
+                            let a = temp - big_dim * ((temp / big_dim) % small_dim);
+                            let b = (a / big_dim) / small_dim;
+                            let c = (a % big_dim) / small_dim;
+                            let sqr = b * small_dim + c;
+
+                            if !check_if_possible(&get_sqr(&sudoku, sqr, big_dim, small_dim),
+                                                  candidate) {
+                                continue;
+                            }
+                        }
+                        forward = true;
+                    }
+                }
+                if forward {
+                    index += 1;
+                } else if index > 0 {
+                    index -= 1;
+                } else {
+                    return;
+                }
+            }
+            *anwser = true;
+            cont.store(false, Ordering::SeqCst);
+        }));
+    }
+
+    for t in threads {
+        t.join().unwrap();
+    }
+
+    for i in &jobs {
+        if i.lock().unwrap().2 {
+
+            return Ok(i.lock().unwrap().0.clone());
+        }
+    }
+
+    Err("No solution!".to_owned())
+}
+
+
+pub fn solve_cross(sudoku_in: &[u32]) -> Result<Vec<u32>, String> {
+    let square_info;
+    match calculate_squares(sudoku_in.len() as u32) {
+        Some(i) => square_info = i,
+        None => return Err("Not a square!".to_owned()),
+    }
+    let (big_dim, check_small, small_dim) = square_info;
+
+    let sudoku = sudoku_in.to_vec();
+
+    let mut fixed_map: Vec<bool> = Vec::with_capacity(sudoku.len());
+    for element in sudoku.iter() {
+        if *element == 0 {
+            fixed_map.push(false);
+        } else {
+            fixed_map.push(true);
+        };
+    }
+
+    let mut reversed_sudoku = sudoku.clone();
+    reversed_sudoku.reverse();
+    let mut fixed_map_reverse = fixed_map.clone();
+    fixed_map_reverse.reverse();
+
+    let anwser = false;
+    let anwser_reverse = false;
+
+    let mut jobs = Vec::new();
+    jobs.push((sudoku, fixed_map, anwser));
+    jobs.push((reversed_sudoku, fixed_map_reverse, anwser_reverse));
+
+    let cont = Arc::new(AtomicBool::new(true));
+
+    crossbeam::scope(|scope| for i in &mut jobs {
+        let cont = cont.clone();
+
+        scope.spawn(move || {
+
+            let (ref mut sudoku, ref mut fixed_map, ref mut anwser) = *i;
+
+            let mut index: u32 = 0;
+            let mut forward = true;
+            while index < sudoku.len() as u32 {
+
+                if !cont.load(Ordering::SeqCst) {
+                    return;
+                }
+
+                if !fixed_map[index as usize] {
+                    sudoku[index as usize] += 1;
+                    if sudoku[index as usize] > big_dim {
+                        if index == 0 {
+                            return;
+                        }
+                        sudoku[index as usize] = 0;
+                        forward = false;
+                    } else {
+
+                        let row_no = index / big_dim;
+                        let col_no = index % big_dim;
+
+                        let row = get_row(&sudoku, row_no, big_dim);
+                        let col = get_col(&sudoku, col_no, big_dim);
+
+                        let candidate = sudoku[index as usize];
+
+                        if !(check_if_possible(&row, candidate) &&
+                             check_if_possible(&col, candidate)) {
+                            continue;
+                        }
+
+                        if check_small {
+                            let temp = index - index % small_dim;
+                            let a = temp - big_dim * ((temp / big_dim) % small_dim);
+                            let b = (a / big_dim) / small_dim;
+                            let c = (a % big_dim) / small_dim;
+                            let sqr = b * small_dim + c;
+
+                            if !check_if_possible(&get_sqr(&sudoku, sqr, big_dim, small_dim),
+                                                  candidate) {
+                                continue;
+                            }
+                        }
+                        forward = true;
+                    }
+                }
+                if forward {
+                    index += 1;
+                } else if index > 0 {
+                    index -= 1;
+                } else {
+                    return;
+                }
+            }
+            *anwser = true;
+            cont.store(false, Ordering::SeqCst);
+        });
+    });
+
+    for i in &jobs {
+        if i.2 {
+
+            return Ok(i.0.clone());
+        }
+    }
+
+    Err("No solution.".to_owned())
+}
+
 pub fn check_if_possible(vec_in: &[u32], candidate: u32) -> bool {
     let mut found = false;
     for i in vec_in {
@@ -299,12 +529,22 @@ mod tests {
     }
     #[test]
     #[ignore]
-    fn solve_hard_test() {
+    fn solve_hard_test_threads() {
         let vec = vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 8, 5, 0, 0, 1, 0, 2, 0, 0,
                        0, 0, 0, 0, 0, 5, 0, 7, 0, 0, 0, 0, 0, 4, 0, 0, 0, 1, 0, 0, 0, 9, 0, 0, 0,
                        0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 7, 3, 0, 0, 2, 0, 1, 0, 0, 0, 0, 0, 0, 0,
                        0, 4, 0, 0, 0, 9];
-        let solved = solve(&vec).unwrap();
+        let solved = solve_threads(&vec).unwrap();
+        assert!(check_if_valid_sudoku(&solved));
+    }
+    #[test]
+    #[ignore]
+    fn solve_hard_test_cross() {
+        let vec = vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 8, 5, 0, 0, 1, 0, 2, 0, 0,
+                       0, 0, 0, 0, 0, 5, 0, 7, 0, 0, 0, 0, 0, 4, 0, 0, 0, 1, 0, 0, 0, 9, 0, 0, 0,
+                       0, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 7, 3, 0, 0, 2, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+                       0, 4, 0, 0, 0, 9];
+        let solved = solve_cross(&vec).unwrap();
         assert!(check_if_valid_sudoku(&solved));
     }
 
@@ -312,13 +552,13 @@ mod tests {
     #[should_panic(expected = "Not a square!")]
     fn solve_notsquare_test() {
         let vec = vec![0, 80];
-        let solved = solve(&vec).unwrap();
+        solve(&vec).unwrap();
     }
 
     #[test]
     #[should_panic(expected = "No solution!")]
     fn solve_nosolution_test() {
         let vec = vec![0, 0, 0, 0, 0, 1, 1, 0, 0, 3, 4, 0, 0, 0, 0, 0];
-        let solved = solve(&vec).unwrap();
+        solve(&vec).unwrap();
     }
 }

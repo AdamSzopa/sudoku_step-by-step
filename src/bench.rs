@@ -51,6 +51,40 @@ fn solve_normal(bench: &mut Bencher) {
                    8, 0, 7];
     bench.iter(|| solve(&vec))
 }
+fn solve_small_simple_threads(bench: &mut Bencher) {
+    let vec = vec![0;25];
+    bench.iter(|| solve_threads(&vec))
+}
+
+fn solve_normal_simple_threads(bench: &mut Bencher) {
+    let vec = vec![0;81];
+    bench.iter(|| solve_threads(&vec))
+}
+
+fn solve_normal_threads(bench: &mut Bencher) {
+    let vec = vec![0, 0, 7, 0, 2, 0, 0, 0, 3, 8, 0, 5, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 6, 0, 1, 5, 8, 0, 0, 0, 0, 3, 0, 0, 6, 0, 0, 0, 1, 7, 0, 0, 0, 0, 9, 0,
+                   0, 0, 2, 9, 0, 0, 0, 6, 0, 0, 0, 3, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0,
+                   8, 0, 7];
+    bench.iter(|| solve_threads(&vec))
+}
+fn solve_small_simple_cross(bench: &mut Bencher) {
+    let vec = vec![0;25];
+    bench.iter(|| solve_cross(&vec))
+}
+
+fn solve_normal_simple_cross(bench: &mut Bencher) {
+    let vec = vec![0;81];
+    bench.iter(|| solve_cross(&vec))
+}
+
+fn solve_normal_cross(bench: &mut Bencher) {
+    let vec = vec![0, 0, 7, 0, 2, 0, 0, 0, 3, 8, 0, 5, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                   0, 0, 6, 0, 1, 5, 8, 0, 0, 0, 0, 3, 0, 0, 6, 0, 0, 0, 1, 7, 0, 0, 0, 0, 9, 0,
+                   0, 0, 2, 9, 0, 0, 0, 6, 0, 0, 0, 3, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0,
+                   8, 0, 7];
+    bench.iter(|| solve_cross(&vec))
+}
 
 benchmark_group!(unique, unique_small, unique_medium, unique_large);
 benchmark_group!(possible, possible_small, possible_medium, possible_large);
@@ -58,4 +92,12 @@ benchmark_group!(solver,
                  solve_small_simple,
                  solve_normal_simple,
                  solve_normal);
-benchmark_main!(unique, possible, solver);
+benchmark_group!(solver_threads,
+                 solve_small_simple_threads,
+                 solve_normal_simple_threads,
+                 solve_normal_threads);
+benchmark_group!(solver_cross,
+                 solve_small_simple_cross,
+                 solve_normal_simple_cross,
+                 solve_normal_cross);
+benchmark_main!(unique, possible, solver, solver_threads, solver_cross);
